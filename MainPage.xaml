@@ -57,13 +57,18 @@
                 </VerticalStackLayout>
 
                
-                    <Editor Grid.Row="1" Grid.Column="1" 
-                        x:Name="editor" 
-                        Margin="10,0,0,0"
-                        IsReadOnly="true" 
-                        TextChanged="Editor_TextChanged" 
-                        HeightRequest="400"
-                        VerticalOptions="FillAndExpand"/>
+                    <VerticalStackLayout Grid.Row="1" Grid.Column="1" Margin="10,0,0,0" Spacing="5">
+    
+    <Label x:Name="StatusLabel" 
+           Text="Please open the XML file." 
+           FontSize="14" 
+           TextColor="Gray" />
+    
+    <WebView x:Name="ResultsWebView" 
+             HeightRequest="380" 
+             VerticalOptions="FillAndExpand" />
+             
+</VerticalStackLayout>
                
             </Grid>
         </VerticalStackLayout>

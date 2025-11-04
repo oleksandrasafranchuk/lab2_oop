@@ -4,6 +4,9 @@ using System.Diagnostics;
 using System.Xml;
 using System.Xml.Xsl;
 using System.Reflection;
+using System.Linq;
+using Microsoft.Maui.Storage;
+using Microsoft.Maui.ApplicationModel;
 
 namespace LR2
 {
@@ -43,13 +46,13 @@ namespace LR2
                 }
 
                 xmlFilePath = localPath;
-                editor.Text = $"File '{fileName}' loaded successfully.";
+                StatusLabel.Text = $"File '{fileName}' loaded successfully."; 
                 
                 PopulateFilters();
             }
             catch (Exception ex)
             {
-                editor.Text = $"Error opening file: {ex.Message}";
+                StatusLabel.Text = $"Error opening file: {ex.Message}";
             }
         }
 
@@ -91,7 +94,9 @@ namespace LR2
 
         private void SearchBtnHandler(object sender, EventArgs e)
         {
-            editor.Text = "";
+            StatusLabel.Text = "Searching...";
+            ResultsWebView.Source = null; 
+            
             MauiProgram.Teacher criteria = GetSelectedParameters();
             MauiProgram.IStrategy analyzer = GetSelectedAnalyzer();
             PerformSearch(criteria, analyzer);
@@ -126,31 +131,60 @@ namespace LR2
 
             if (results == null || results.Count == 0)
             {
-                editor.Text = "Nothing found for your request.";
+                StatusLabel.Text = "Search complete.";
+                ResultsWebView.Source = new HtmlWebViewSource { Html = "<p>Nothing found for your request.</p>" };
                 return;
             }
 
+            StatusLabel.Text = $"Found results: {results.Count}";
+            ResultsWebView.Source = new HtmlWebViewSource { Html = GenerateHtmlTable(results) };
+        }
+
+        private string GenerateHtmlTable(List<MauiProgram.Teacher> teachers)
+        {
             var sb = new StringBuilder();
-            sb.AppendLine($"Found results: {results.Count}\n");
-            foreach (var t in results)
+            sb.AppendLine("<html><head><style>");
+            sb.AppendLine("table { width: 100%; border-collapse: collapse; font-family: sans-serif; }");
+            sb.AppendLine("th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }");
+            sb.AppendLine("th { background-color: #f2f2f2; color: #333; }");
+            sb.AppendLine("tr:nth-child(even) { background-color: #f9f9f9; }");
+            sb.AppendLine("ul { margin: 0; padding-left: 20px; }");
+            sb.AppendLine("</style></head><body>");
+            sb.AppendLine("<table>");
+            sb.AppendLine("<tr><th>Full Name</th><th>Faculty</th><th>Department</th><th>Position</th><th>Education</th></tr>");
+
+            foreach (var t in teachers)
             {
-                sb.AppendLine($"Full Name: {t.FullName}");
-                sb.AppendLine($"Faculty: {t.Faculty}");
-                sb.AppendLine($"Department: {t.Department}");
-                sb.AppendLine($"Position: {t.Position}");
-                sb.AppendLine("Education:");
-                foreach(var edu in t.Educations)
+                sb.AppendLine("<tr>");
+                sb.AppendLine($"<td>{t.FullName}</td>");
+                sb.AppendLine($"<td>{t.Faculty}</td>");
+                sb.AppendLine($"<td>{t.Department}</td>");
+                sb.AppendLine($"<td>{t.Position}</td>");
+                sb.AppendLine("<td>");
+                if (t.Educations.Any())
                 {
-                    sb.AppendLine($"  - {edu.Level}: {edu.Institution} ({edu.Period})");
+                    sb.AppendLine("<ul>");
+                    foreach (var edu in t.Educations)
+                    {
+                        sb.AppendLine($"<li><b>{edu.Level}:</b> {edu.Institution} ({edu.Period})</li>");
+                    }
+                    sb.AppendLine("</ul>");
                 }
-                sb.AppendLine(new string('-', 20));
+                sb.AppendLine("</td>");
+                sb.AppendLine("</tr>");
             }
-            editor.Text = sb.ToString();
+
+            sb.AppendLine("</table>");
+            sb.AppendLine("</body></html>");
+
+            return sb.ToString();
         }
 
         private void ClearFields(object sender, EventArgs e)
         {
-            editor.Text = "";
+            StatusLabel.Text = "";
+            ResultsWebView.Source = null;
+            
             results?.Clear();
 
             FullNameCheckBox.IsChecked = false;
@@ -163,8 +197,8 @@ namespace LR2
             DepartmentPicker.SelectedItem = null;
             PositionPicker.SelectedItem = null;
         }
-
-        private async void OnTransformToHTMLBtnClicked(object sender, EventArgs e)
+       
+       private async void OnTransformToHTMLBtnClicked(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(xmlFilePath) || !File.Exists(xmlFilePath))
             {
@@ -173,10 +207,11 @@ namespace LR2
             }
             try
             {
-                string htmlFilePath = Path.Combine(FileSystem.AppDataDirectory, "TeachersList.html");
+                string htmlFilePath = Path.Combine(FileSystem.CacheDirectory, "TeachersList.html");
+                
                 var xslt = new XslCompiledTransform();
                 var assembly = Assembly.GetExecutingAssembly();
-                
+
                 using (var stream = assembly.GetManifestResourceStream("LR2.teachers.xsl"))
                 {
                     if (stream == null)
@@ -190,7 +225,16 @@ namespace LR2
                     }
                 }
                 xslt.Transform(xmlFilePath, htmlFilePath);
-                await DisplayAlert("Success", $"File transformed and saved successfully:\n{htmlFilePath}", "Ok");
+
+                bool openBrowser = await DisplayAlert("Success", 
+                    $"File transformed and saved successfully:\n{htmlFilePath}\n\nOpen in browser?", 
+                    "Yes", 
+                    "No");
+
+                if (openBrowser)
+                {
+                    await Launcher.OpenAsync(new Uri($"file://{htmlFilePath}"));
+                }
             }
             catch (Exception ex)
             {
@@ -204,13 +248,6 @@ namespace LR2
             {
                 Application.Current.Quit();
             }
-        }
-
-        private void Editor_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (editor.Text == null) return;
-            int textLength = editor.Text.Length;
-            editor.FontSize = textLength < 100 ? 18 : textLength < 500 ? 14 : 10;
         }
     }
 }

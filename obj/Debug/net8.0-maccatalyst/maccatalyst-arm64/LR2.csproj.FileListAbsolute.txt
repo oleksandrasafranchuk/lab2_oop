@@ -299,6 +299,7 @@
 /Users/oleksandrasafrancuk/LR2/obj/Debug/net8.0-maccatalyst/maccatalyst-arm64/LR2.pdb
 /Users/oleksandrasafrancuk/LR2/obj/Debug/net8.0-maccatalyst/maccatalyst-arm64/LR2.genruntimeconfig.cache
 /Users/oleksandrasafrancuk/LR2/obj/Debug/net8.0-maccatalyst/maccatalyst-arm64/ref/LR2.dll
+/Users/oleksandrasafrancuk/LR2/obj/Debug/net8.0-maccatalyst/maccatalyst-arm64/LR2.sourcelink.json
 /Users/oleksandrasafrancuk/LR2/obj/Debug/net8.0-maccatalyst/maccatalyst-arm64/resourcestamps/Microsoft.CSharp.stamp
 /Users/oleksandrasafrancuk/LR2/obj/Debug/net8.0-maccatalyst/maccatalyst-arm64/resourcestamps/Microsoft.Extensions.Configuration.Abstractions.stamp
 /Users/oleksandrasafrancuk/LR2/obj/Debug/net8.0-maccatalyst/maccatalyst-arm64/resourcestamps/Microsoft.Extensions.Configuration.stamp
